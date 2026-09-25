@@ -20,7 +20,7 @@ Decisions already made:
 5. Sees the equipment list: skirts, tail, gap fairing, roof fairing, chassis fairings, tire type, APU or generator. Each is yes / no / unsure. Photos pre-fill it. Driver confirms.
 6. Types MPG, miles per year, and cruise speed. Garage truck fills these if there is one.
 7. Gets the list: each change, MPG gain, cost, dollars per year, months to break even. Sorted by break-even.
-8. Taps a row. Opens `/fuel` with that intervention selected and the numbers filled.
+8. Taps a row. It opens in place with the full numbers: MPG, ¢/mile, gallons, dollars at three diesel prices, cost, and net after 1, 3, and 5 years.
 
 First answer works with VIN plus typed MPG and miles. Photos and engine serial are optional. This keeps rule 6 of the launch plan: no garage, no login, still an answer.
 
@@ -114,25 +114,19 @@ Same rule as the rest of Driveline: numbers stay on the device unless the driver
 
 ## 5. Files
 
-New:
+Standalone app. Vite, React, TypeScript. Static site on Render. No server. Does not import Driveline.
 
-- `src/routes/scan.tsx` — the page. Steps as sections on one scrolling page, not a wizard with a back button.
-- `src/lib/scan/types.ts` — `ScanRecord`, `SpecLine` with `source: "vin" | "photo" | "typed" | "estimate"`, `EquipmentAnswers`.
-- `src/lib/scan/vin.ts` — VIN check digit, `decodeVin` server fn that calls vPIC and maps fields.
-- `src/lib/scan/vision-fn.ts` — server fn: images in, equipment JSON out. Behind `allowScanVision`.
-- `src/lib/scan/estimate-fn.ts` — server fn: VIN + serial + decoded fields in, gap fills out. Text only. Behind `allowAiParse`.
-- `src/lib/scan/recommend.ts` — pure function. Specs + equipment + typed numbers in, sorted rows out. Unit tested.
-- `src/lib/scan/photos.ts` — resize, IndexedDB read and write.
-- `src/components/scan/photo-capture.tsx` — `<input type="file" accept="image/*" capture="environment">` with a preview grid. This is the phone camera on iOS and Android with nothing to install.
-- `migrations/0003_scan.sql` — cloud slot (phase 3).
+Phase 1 (built):
 
-Changed:
+- `src/lib/fuel.ts`: `fuelMath`, `speedMath`, and payback copied from Driveline `src/lib/fuel/math.ts`. Same numbers as the Fuel calculator. Copy again if Driveline's math changes.
+- `src/lib/interventions.ts`: planning table. Aero rows copied from Driveline `src/lib/fuel/presets.ts`. Tire row 0.3 MPG, $3,500 per section 8. Idle burn rates 0.8, 0.2, and 0 gal/hr.
+- `src/lib/vin.ts`: VIN cleanup, check digit, NHTSA vPIC call from the browser, field mapping. vPIC sends `Access-Control-Allow-Origin: *`, so no server is needed.
+- `src/lib/recommend.ts`: pure function. Equipment, cab, and numbers in. Sorted rows out.
+- `src/lib/storage.ts`: current scan and saved trucks in `localStorage`.
+- `src/components/`: one component per page section.
+- Tests next to the code: `vin.test.ts` against a real NHTSA response, `recommend.test.ts` for every rule in section 3.
 
-- `src/lib/fuel/presets.ts` — tire row.
-- `src/routes/fuel.tsx` — accept `?intervention=skirts&nowMpg=7.4&miles=110000` search params so a scan row opens Fuel filled in.
-- `src/lib/nav.ts` — add Truck Scan. Public, next to Fuel.
-- `src/lib/ai-guard.server.ts` — `allowScanVision`.
-- `src/lib/desk/payload.ts` — `scan` payload parse and merge (phase 3).
+Later phases add `src/lib/photos.ts` (IndexedDB), a vision call, and an estimate call. Those need a server for the API key. Plan: one small serverless function, not a full backend.
 
 ---
 
@@ -141,7 +135,15 @@ Changed:
 Each phase ships on its own. Do not start the next until the current one passes section 2 of `LAUNCH_PLAN.md` on a phone.
 
 **Phase 1 — VIN and checklist. No AI, no photos.**
-`/scan` with VIN decode, spec sheet, tap-to-answer equipment list, typed MPG and miles, ranked list, hand-off to Fuel. Everything on device. This is most of the value and has no per-call cost.
+VIN decode, spec sheet, tap-to-answer equipment list, typed MPG and miles, ranked list with full numbers per row. Everything on device. This is most of the value and has no per-call cost. Built 2026-09-25.
+
+Phase 1 rules that are not in section 3:
+
+- The tractor aero kit includes extenders. When chassis fairings are missing, the kit row shows and the gap row does not.
+- Roof fairing is not asked. The planning table has no row for it yet.
+- Idle rows show gallons and dollars saved. Payback waits until the driver types a quote. The table has no planning cost for an APU.
+- A truck with a diesel APU gets one row: battery APU instead of the diesel APU.
+- An answer of "Not sure" keeps the row and tags it "Not checked yet." Trailer rows are tagged "Only if you own the trailer" until that question is answered.
 
 **Phase 2 — Photos.**
 Capture, resize, store on device, show in the record. Send to vision to pre-fill the checklist. Driver confirms before anything is recommended. Rate limited. Works without the key.
