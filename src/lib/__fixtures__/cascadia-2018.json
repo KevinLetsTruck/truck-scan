@@ -1,0 +1,16 @@
+{
+  "Make": "FREIGHTLINER",
+  "Model": "Cascadia",
+  "ModelYear": "2018",
+  "EngineModel": "Detroit Diesel DD15",
+  "DisplacementL": "14.8",
+  "EngineHP": "",
+  "DriveType": "6x4",
+  "GVWR": "Class 8: 33,001 lb and above (14,969 kg and above)",
+  "Trim": "126\" sleeper cab",
+  "Series": "",
+  "BodyCabType": "MDHD: Conventional",
+  "BodyClass": "Truck-Tractor",
+  "ErrorCode": "0",
+  "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+}
